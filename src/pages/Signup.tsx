@@ -1,4 +1,3 @@
-// src/pages/Signup.tsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase/client";
@@ -21,7 +20,6 @@ export default function Signup() {
     e.preventDefault();
     setLoading(true);
 
-    // Validate password match
     if (password !== confirmPassword) {
       toast.error("Passwords do not match.");
       setLoading(false);
@@ -29,15 +27,9 @@ export default function Signup() {
     }
 
     try {
-      // Step 1: Sign up with email and password
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: {
-            nickname,
-          },
-        },
       });
 
       if (authError) {
@@ -45,13 +37,27 @@ export default function Signup() {
         return;
       }
 
-      // Step 2: Upload profile image if selected
-      if (profileImage) {
+      if (authData.user) {
+        const { error: profileError } = await supabase.from("profiles").upsert({
+          id: authData.user.id,
+          nickname,
+          avatar_url: null,
+          workout_splits: null,
+        });
+
+        if (profileError) {
+          toast.error("Failed to create profile");
+          return;
+        }
+      }
+
+      if (profileImage && authData.user) {
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("profile-images")
+          .from("avatar")
           .upload(
-            `public/${authData.user?.id}/${profileImage.name}`,
-            profileImage
+            `public/${authData.user.id}/${profileImage.name}`,
+            profileImage,
+            { upsert: true }
           );
 
         if (uploadError) {
@@ -59,11 +65,15 @@ export default function Signup() {
           return;
         }
 
-        // Step 3: Update user profile with image URL
-        const { error: updateError } = await supabase
-          .from("profiles")
-          .update({ avatar_url: uploadData.path })
-          .eq("id", authData.user?.id);
+        const { data: urlData } = supabase.storage
+          .from("avatar")
+          .getPublicUrl(uploadData.path);
+
+        const { error: updateError } = await supabase.from("profiles").upsert({
+          id: authData.user.id,
+          avatar_url: `${urlData.publicUrl}?${Date.now()}`,
+          nickname,
+        });
 
         if (updateError) {
           toast.error("Failed to update profile.");
@@ -71,13 +81,11 @@ export default function Signup() {
         }
       }
 
-      toast.success(
-        "Account created successfully! Please check your email for verification."
-      );
-      navigate("/login"); // Redirect to login page
+      toast.success("Account created! Please check your email.");
+      navigate("/login");
     } catch (err) {
-      console.error(err); // Log the error for debugging
-      toast.error("An unexpected error occurred. Please try again.");
+      console.error(err);
+      toast.error("An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
@@ -86,18 +94,13 @@ export default function Signup() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-md p-8 space-y-6">
-        {/* App Name */}
         <h1 className="text-2xl font-bold text-center text-gray-900">Stride</h1>
-
-        {/* Form Title & Subtitle */}
         <div className="space-y-2 text-center">
           <h2 className="text-lg font-semibold text-gray-900">Sign up</h2>
           <p className="text-sm text-gray-500">Create an account on trackfit</p>
         </div>
 
-        {/* Signup Form */}
         <form onSubmit={handleSignup} className="space-y-4">
-          {/* Email Input */}
           <div className="space-y-2">
             <Label
               htmlFor="email"
@@ -116,7 +119,6 @@ export default function Signup() {
             />
           </div>
 
-          {/* Nickname Input */}
           <div className="space-y-2">
             <Label
               htmlFor="nickname"
@@ -135,7 +137,6 @@ export default function Signup() {
             />
           </div>
 
-          {/* Password Input */}
           <div className="space-y-2">
             <Label
               htmlFor="password"
@@ -154,7 +155,6 @@ export default function Signup() {
             />
           </div>
 
-          {/* Confirm Password Input */}
           <div className="space-y-2">
             <Label
               htmlFor="confirmPassword"
@@ -173,7 +173,6 @@ export default function Signup() {
             />
           </div>
 
-          {/* Profile Image Upload */}
           <div className="space-y-2">
             <Label
               htmlFor="profileImage"
@@ -190,7 +189,6 @@ export default function Signup() {
             />
           </div>
 
-          {/* Sign-Up Button */}
           <Button
             type="submit"
             className="w-full bg-gray-900 text-white text-sm font-medium py-2 rounded-lg hover:bg-gray-800 transition"
@@ -200,7 +198,6 @@ export default function Signup() {
           </Button>
         </form>
 
-        {/* Login Link */}
         <div className="text-center text-sm text-gray-600">
           Already have an account?{" "}
           <a
