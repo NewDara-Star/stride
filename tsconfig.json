@@ -1,17 +1,26 @@
 {
-  "files": [],
-  "references": [
-    {
-      "path": "./tsconfig.app.json"
-    },
-    {
-      "path": "./tsconfig.node.json"
-    }
-  ],
   "compilerOptions": {
-    "baseUrl": ".",
+    "target": "ES2020", // Target modern JavaScript
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"], // Include necessary libraries
+    "allowJs": false, // Disallow JavaScript files
+    "skipLibCheck": true, // Skip type checking of declaration files
+    "esModuleInterop": true, // Enable ES module interop
+    "allowSyntheticDefaultImports": true, // Allow synthetic default imports
+    "strict": true, // Enable all strict type-checking options
+    "forceConsistentCasingInFileNames": true, // Ensure consistent casing in file names
+    "module": "ESNext", // Use ESM modules
+    "moduleResolution": "Bundler", // Use bundler resolution
+    "resolveJsonModule": true, // Allow importing JSON files
+    "isolatedModules": true, // Ensure each file can be transpiled independently
+    "noEmit": true, // Don't emit JS files (Vite handles this)
+    "jsx": "react-jsx", // Use React JSX
+    "baseUrl": ".", // Base directory for path resolution
     "paths": {
-      "@/*": ["./src/*"]
-    }
-  }
+      "@/*": ["./src/*"] // Map @/* to ./src/*
+    },
+    "types": ["vite/client"] // Include Vite client types
+  },
+  "include": ["src"], // Include files in the src directory
+  "exclude": ["node_modules", "dist"] // Exclude node_modules and dist
 }
